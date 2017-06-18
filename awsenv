@@ -1,0 +1,59 @@
+#!/bin/bash
+
+usage_exit() {
+  cat <<EOF
+Usage: awsenv [options]
+
+Examples:
+
+  run command with my-profle:
+    awsenv -p my-profile env | grep AWS_ACCESS_KEY_ID
+
+  run command with default profile (or AWS_PROFILE):
+    awsenv env | grep AWS_ACCESS_KEY_ID
+
+  export AWS_PROFILE environment variable with my-profile
+    eval \$(awsenv -ep my-profile)
+
+  export credential  environment variables with my-profile
+    eval \$(awsenv -Ep my-profile)
+EOF
+  exit "$1"
+}
+
+run() {
+  eval "$(export_credentials)"
+  "$@"
+}
+
+export_profile() {
+  echo export AWS_PROFILE="$AWS_PROFILE"
+}
+
+export_credentials() {
+  cat <<EOF
+export AWS_DEFAULT_REGION="$(aws configure get region)"
+export AWS_ACCESS_KEY_ID="$(aws configure get aws_access_key_id)"
+export AWS_SECRET_ACCESS_KEY="$(aws configure get aws_secret_access_key)"
+EOF
+}
+
+while getopts p:eEh OPT
+do
+  case $OPT in
+    p) AWS_PROFILE=$OPTARG ;;
+    e) action=export_profile ;;
+    E) action=export_credentials ;;
+    h) usage_exit ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+[ $# -eq 0 ] && [ -z "$action" ] && usage_exit 1 1>&2
+
+export AWS_PROFILE
+case $action in
+  export_profile) $action ;;
+  export_credentials) $action ;;
+  *) run "$@" ;;
+esac
