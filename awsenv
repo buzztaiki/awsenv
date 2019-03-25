@@ -1,7 +1,7 @@
 #!/bin/bash
 # shellcheck disable=SC2155
 
-token_duration="${AWSENV_TOKEN_DURATION:-3600}"
+token_duration=''
 cache_dir=$HOME/.cache/awsenv
 no_cache=0
 
@@ -16,6 +16,9 @@ Examples:
 
   Run a command with my-profle no cache:
     awsenv -Cp my-profile aws sts get-caller-identity
+
+  Run a command with my-profle and token duration:
+    awsenv -Cp my-profile -d 7200 aws sts get-caller-identity
 
   Export credential environment variables with my-profile:
     eval \$(awsenv -ep my-profile)
@@ -41,17 +44,21 @@ credentials_json() {
   local source_profile="$(aws configure get source_profile)"
   local role_arn="$(aws configure get role_arn)"
   local mfa_token
-  local mfa_opts=()
+  local opts=()
 
   if [ -n "$mfa_serial" ]; then
     read -rp 'MFA Token: ' mfa_token
-    mfa_opts=(--serial-number "$mfa_serial" --token-code "$mfa_token")
+    opts=(--serial-number "$mfa_serial" --token-code "$mfa_token")
+  fi
+
+  if [ -n "$token_duration" ]; then
+    opts=("${opts[@]}" --duration "$token_duration")
   fi
 
   if [ -n "$source_profile" ] && [ -n "$role_arn" ]; then
-    aws --output json --profile "$source_profile" sts assume-role --role-arn "$role_arn" --role-session-name aws-env-"$(date +%s)" --duration "$token_duration" "${mfa_opts[@]}"
+    aws --output json --profile "$source_profile" sts assume-role --role-arn "$role_arn" --role-session-name aws-env-"$(date +%s)" "${opts[@]}"
   else
-    aws --output json sts get-session-token --duration "$token_duration" "${mfa_opts[@]}"
+    aws --output json sts get-session-token "${opts[@]}"
   fi
 }
 
@@ -99,12 +106,13 @@ export_env() {
   export_variable "$shell" AWS_SESSION_TOKEN "$(echo "$json" | jq '.Credentials.SessionToken' -r)"
 }
 
-while getopts p:eCh OPT
+while getopts p:eCd:h OPT
 do
   case $OPT in
     p) AWS_PROFILE=$OPTARG ;;
     e) action=export_env ;;
     C) no_cache=1 ;;
+    d) token_duration=$OPTARG ;;
     h) usage_exit ;;
     *) ;;
   esac
