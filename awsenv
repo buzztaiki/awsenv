@@ -75,7 +75,7 @@ credentials_json_or_cache() {
   mkdir -p "$cache_dir"
 
   if [ "$no_cache" = 1 ]; then
-    rm "$cache"
+    rm -f "$cache"
   fi
 
   if [ ! -s "$cache" ]; then
