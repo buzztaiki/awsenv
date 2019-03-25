@@ -11,7 +11,7 @@ Usage: awsenv [options]
 Examples:
 
   Run a command with my-profle:
-    awsenv -p my-profile env | grep AWS_ACCESS_KEY_ID
+    awsenv -p my-profile aws sts get-caller-identity
 
   Export credential environment variables with my-profile:
     eval \$(awsenv -ep my-profile)
