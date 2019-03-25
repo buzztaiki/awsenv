@@ -26,6 +26,14 @@ Examples:
   If you use the fish shell:
     awsenv -ep my-profile | source -
 
+
+Configuration:
+
+  You can token_duration in ~/.aws/config as follows:
+
+  [profile my-profile]
+  token_duration=43200
+
 EOF
   exit "$1"
 }
@@ -122,6 +130,12 @@ shift $((OPTIND - 1))
 [ $# -eq 0 ] && [ -z "$action" ] && usage_exit 1 1>&2
 
 export AWS_PROFILE
+
+# set token_duration from profile if empty
+if [ -z "$token_duration" ]; then
+  token_duration="$(aws configure get token_duration)"
+fi
+
 case $action in
   export_env)
     export_env "$(basename "$SHELL")"
