@@ -1,4 +1,8 @@
 #!/bin/bash
+# shellcheck disable=SC2155
+
+token_duration="${AWSENV_TOKEN_DURATION:-3600}"
+cache_dir=$HOME/.cache/awsenv
 
 usage_exit() {
   cat <<EOF
@@ -9,25 +13,14 @@ Examples:
   Run a command with my-profle:
     awsenv -p my-profile env | grep AWS_ACCESS_KEY_ID
 
-  Run a command with default profile (or AWS_PROFILE):
-    awsenv env | grep AWS_ACCESS_KEY_ID
-
-  Export the AWS_PROFILE environment variable with my-profile:
+  Export credential environment variables with my-profile:
     eval \$(awsenv -ep my-profile)
 
-  Export credential environment variables with my-profile:
-    eval \$(awsenv -Ep my-profile)
-
   If you use the fish shell:
-    awsenv -Ep my-profile | source -
+    awsenv -ep my-profile | source -
 
 EOF
   exit "$1"
-}
-
-run() {
-  eval "$(export_credentials bash)"
-  "$@"
 }
 
 export_variable() {
@@ -39,35 +32,85 @@ export_variable() {
   fi
 }
 
-export_profile() {
+credentials_json() {
+  local mfa_serial="$(aws configure get mfa_serial)"
+  local source_profile="$(aws configure get source_profile)"
+  local role_arn="$(aws configure get role_arn)"
+  local mfa_token
+  local mfa_opts=()
+
+  if [ -n "$mfa_serial" ]; then
+    read -rp 'MFA Token: ' mfa_token
+    mfa_opts=(--serial-number "$mfa_serial" --token-code "$mfa_token")
+  fi
+
+  if [ -n "$source_profile" ] && [ -n "$role_arn" ]; then
+    aws --output json --profile "$source_profile" sts assume-role --role-arn "$role_arn" --role-session-name aws-env-"$(date +%s)" --duration "$token_duration" "${mfa_opts[@]}"
+  else
+    aws --output json sts get-session-token --duration "$token_duration" "${mfa_opts[@]}"
+  fi
+}
+
+credentials_json_or_cache() {
+  local cache=$cache_dir/$AWS_PROFILE.json
+  mkdir -p "$cache_dir"
+
+  if [ ! -s "$cache" ]; then
+    credentials_json > "$cache"
+  fi
+
+  if ! jq --exit-status \
+       '(.Credentials.Expiration | fromdate) > now' \
+       < "$cache" > /dev/null
+  then
+     credentials_json > "$cache"
+  fi
+
+  cat "$cache"
+}
+
+region() {
+  local region="$(aws configure get region)"
+  if [ -n "$region" ]; then
+    echo "$region"
+  else
+    echo "$AWS_DEFAULT_REGION"
+  fi
+}
+
+export_env() {
   local shell="$1"
+  local json=$(credentials_json_or_cache)
+  local region=$(region)
+
   export_variable "$shell" AWS_PROFILE "$AWS_PROFILE"
+  export_variable "$shell" AWS_DEFAULT_REGION "$region"
+  export_variable "$shell" AWS_REGION "$region"
+  export_variable "$shell" AWS_ACCESS_KEY_ID "$(echo "$json" | jq '.Credentials.AccessKeyId' -r)"
+  export_variable "$shell" AWS_SECRET_ACCESS_KEY "$(echo "$json" | jq '.Credentials.SecretAccessKey' -r)"
+  export_variable "$shell" AWS_SESSION_TOKEN "$(echo "$json" | jq '.Credentials.SessionToken' -r)"
 }
 
-export_credentials() {
-  local shell="$1"
-  export_profile "$shell"
-  export_variable "$shell" AWS_DEFAULT_REGION "$(aws configure get region)"
-  export_variable "$shell" AWS_ACCESS_KEY_ID "$(aws configure get aws_access_key_id)"
-  export_variable "$shell" AWS_SECRET_ACCESS_KEY "$(aws configure get aws_secret_access_key)"
-}
-
-while getopts p:eEh OPT
+while getopts p:eh OPT
 do
   case $OPT in
     p) AWS_PROFILE=$OPTARG ;;
-    e) action=export_profile ;;
-    E) action=export_credentials ;;
+    e) action=export_env ;;
     h) usage_exit ;;
+    *) ;;
   esac
 done
 shift $((OPTIND - 1))
 
 [ $# -eq 0 ] && [ -z "$action" ] && usage_exit 1 1>&2
 
-shell=$(basename "$SHELL")
 export AWS_PROFILE
 case $action in
-  export_profile|export_credentials) $action "$shell";;
-  *) run "$@" ;;
+  export_env)
+    export_env "$(basename "$SHELL")"
+    ;;
+  *)
+    eval "$(export_env bash)"
+    "$@"
+    ;;
 esac
