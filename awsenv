@@ -3,6 +3,7 @@
 
 token_duration="${AWSENV_TOKEN_DURATION:-3600}"
 cache_dir=$HOME/.cache/awsenv
+no_cache=0
 
 usage_exit() {
   cat <<EOF
@@ -12,6 +13,9 @@ Examples:
 
   Run a command with my-profle:
     awsenv -p my-profile aws sts get-caller-identity
+
+  Run a command with my-profle no cache:
+    awsenv -Cp my-profile aws sts get-caller-identity
 
   Export credential environment variables with my-profile:
     eval \$(awsenv -ep my-profile)
@@ -55,6 +59,10 @@ credentials_json_or_cache() {
   local cache=$cache_dir/$AWS_PROFILE.json
   mkdir -p "$cache_dir"
 
+  if [ "$no_cache" = 1 ]; then
+    rm "$cache"
+  fi
+
   if [ ! -s "$cache" ]; then
     credentials_json > "$cache"
   fi
@@ -91,11 +99,12 @@ export_env() {
   export_variable "$shell" AWS_SESSION_TOKEN "$(echo "$json" | jq '.Credentials.SessionToken' -r)"
 }
 
-while getopts p:eh OPT
+while getopts p:eCh OPT
 do
   case $OPT in
     p) AWS_PROFILE=$OPTARG ;;
     e) action=export_env ;;
+    C) no_cache=1 ;;
     h) usage_exit ;;
     *) ;;
   esac
