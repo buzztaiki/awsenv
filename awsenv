@@ -121,7 +121,7 @@ do
     e) action=export_env ;;
     C) no_cache=1 ;;
     d) token_duration=$OPTARG ;;
-    h) usage_exit ;;
+    h) usage_exit 0 ;;
     *) ;;
   esac
 done
