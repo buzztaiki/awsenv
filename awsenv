@@ -29,7 +29,7 @@ Examples:
 
 Configuration:
 
-  You can token_duration in ~/.aws/config as follows:
+  You can set token_duration per profile in ~/.aws/config as follows:
 
   [profile my-profile]
   token_duration=43200

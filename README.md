@@ -2,6 +2,12 @@
 
 Set AWS environment variables and execute.
 
+## Requirements
+
+- https://github.com/aws/aws-cli
+- https://github.com/stedolan/jq
+
+
 ## Usage
 
 
@@ -26,7 +32,7 @@ If you use the fish shell:
 ## Configuration
 
 ```
-You can token_duration in ~/.aws/config as follows:
+You can set token_duration per profile in ~/.aws/config as follows:
 
 [profile my-profile]
 token_duration=43200
