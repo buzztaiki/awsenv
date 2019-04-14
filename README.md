@@ -22,10 +22,10 @@ Run a command with my-profle and token duration:
   awsenv -Cp my-profile -d 7200 aws sts get-caller-identity
 
 Export credential environment variables with my-profile:
-  eval $(awsenv -ep my-profile)
+  eval $(awsenv -p my-profile)
 
 If you use the fish shell:
-  awsenv -ep my-profile | source -
+  awsenv -p my-profile | source -
 ```
 
 

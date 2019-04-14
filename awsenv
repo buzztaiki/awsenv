@@ -7,7 +7,8 @@ no_cache=0
 
 usage_exit() {
   cat <<EOF
-Usage: awsenv [options]
+Usage: $0 [options...] [command [args...]]
+       $0 [options...]
 
 Examples:
 
@@ -21,10 +22,10 @@ Examples:
     awsenv -Cp my-profile -d 7200 aws sts get-caller-identity
 
   Export credential environment variables with my-profile:
-    eval \$(awsenv -ep my-profile)
+    eval \$(awsenv -p my-profile)
 
   If you use the fish shell:
-    awsenv -ep my-profile | source -
+    awsenv -p my-profile | source -
 
 
 Configuration:
@@ -122,16 +123,14 @@ while getopts p:eCd:h OPT
 do
   case $OPT in
     p) AWS_PROFILE=$OPTARG ;;
-    e) action=export_env ;;
+    e) ;; # deprecated
     C) no_cache=1 ;;
     d) token_duration=$OPTARG ;;
     h) usage_exit 0 ;;
-    *) ;;
+    *) usage_exit 1 1>&2 ;;
   esac
 done
 shift $((OPTIND - 1))
-
-[ $# -eq 0 ] && [ -z "$action" ] && usage_exit 1 1>&2
 
 export AWS_PROFILE
 
@@ -140,12 +139,9 @@ if [ -z "$token_duration" ]; then
   token_duration="$(aws configure get token_duration)"
 fi
 
-case $action in
-  export_env)
-    export_env "$(basename "$SHELL")"
-    ;;
-  *)
-    eval "$(export_env bash)"
-    "$@"
-    ;;
-esac
+if [ $# -eq 0 ]; then
+  export_env "$(basename "$SHELL")"
+else
+  eval "$(export_env bash)"
+  "$@"
+fi
