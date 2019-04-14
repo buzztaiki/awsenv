@@ -119,6 +119,12 @@ export_env() {
   export_variable "$shell" AWS_SESSION_TOKEN "$(echo "$json" | jq '.Credentials.SessionToken' -r)"
 }
 
+validate_profile() {
+  env -u AWS_PROFILE aws configure --profile "$AWS_PROFILE" get aws_access_key_id > /dev/null
+  # profile not found
+  [ $? -eq 255 ] && exit 1
+}
+
 while getopts p:eCd:h OPT
 do
   case $OPT in
@@ -133,6 +139,7 @@ done
 shift $((OPTIND - 1))
 
 export AWS_PROFILE
+validate_profile
 
 # set token_duration from profile if empty
 if [ -z "$token_duration" ]; then
