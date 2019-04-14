@@ -45,14 +45,41 @@ If you use the fish shell:
 To see full options, run `awsenv -h`.
 
 
+## Assume role
+
+To use to assume role, you must set up aws cli configuration as follows.
+
+
+in `~/.aws/config`:
+
+
+```
+[profile my-profile]
+role_arn = arn:aws:iam::1234:role/nobody
+mfa_serial = arn:aws:iam::5678:mfa/somebody
+source_profile = mgmt-profile
+```
+
+in `~/.aws/credentials`:
+
+```
+[mgmt-profile]
+aws_access_key_id = AKXXX
+aws_secret_access_key = ZZZ
+```
+
+For more detials see https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html.
+
+
 ## Configuration
 
-You can set token_duration per profile in ~/.aws/config as follows:
+You can set token_duration per profile in `~/.aws/config` as follows:
 
 ```
 [profile my-profile]
 token_duration=43200
 ```
+
 
 ## License
 
