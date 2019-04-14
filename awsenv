@@ -10,30 +10,19 @@ usage_exit() {
 Usage: $0 [options...] [command [args...]]
        $0 [options...]
 
-Examples:
-
-  Run a command with my-profle:
-    awsenv -p my-profile aws sts get-caller-identity
-
-  Run a command with my-profle no cache:
-    awsenv -Cp my-profile aws sts get-caller-identity
-
-  Run a command with my-profle and token duration:
-    awsenv -Cp my-profile -d 7200 aws sts get-caller-identity
-
-  Export credential environment variables with my-profile:
-    eval \$(awsenv -p my-profile)
-
-  If you use the fish shell:
-    awsenv -p my-profile | source -
+Set AWS environment variables and execute.
+If no command given, awsenv output credential environment variables for exporting.
 
 
-Configuration:
+Options:
 
-  You can set token_duration per profile in ~/.aws/config as follows:
+  -p PROFILE    specify profile
+  -C            flag don't use cache
+  -d DURATION   specify token duration
+  -h            show this help
 
-  [profile my-profile]
-  token_duration=43200
+
+For more information, see <https://github.com/buzztaiki/awsenv>.
 
 EOF
   exit "$1"
