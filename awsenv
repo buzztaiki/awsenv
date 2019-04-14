@@ -70,6 +70,16 @@ credentials_json() {
   fi
 }
 
+credentials_cache_not_expired() {
+  local cache="$1"
+
+  [ -f "$cache" ] || return 1
+  # treat empty cache
+  [ -n "$(jq < "$cache")" ] || return 1
+
+  jq --exit-status '(.Credentials.Expiration | fromdate) > now' < "$cache" > /dev/null
+}
+
 credentials_json_or_cache() {
   local cache=$cache_dir/$AWS_PROFILE.json
   mkdir -p "$cache_dir"
@@ -78,15 +88,9 @@ credentials_json_or_cache() {
     rm -f "$cache"
   fi
 
-  if [ ! -s "$cache" ]; then
+  if ! credentials_cache_not_expired "$cache"; then
     credentials_json > "$cache"
-  fi
-
-  if ! jq --exit-status \
-       '(.Credentials.Expiration | fromdate) > now' \
-       < "$cache" > /dev/null
-  then
-     credentials_json > "$cache"
+    chmod 600 "$cache"
   fi
 
   cat "$cache"
