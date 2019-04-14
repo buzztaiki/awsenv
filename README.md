@@ -1,12 +1,19 @@
 # awsenv
 
-Set AWS environment variables and execute.
+Set AWS credential environment variables and execute.
 
 ## Requirements
 
 - https://github.com/aws/aws-cli
 - https://github.com/stedolan/jq
 
+
+## Features
+
+- Run command with specified profile's session credentials.
+- Export credentials to environment variables.
+- Assume role with MFA.
+- Cache credentials.
 
 ## Usage
 
