@@ -67,7 +67,7 @@ credentials_cache_not_expired() {
   # treat empty cache
   [ -n "$(jq < "$cache")" ] || return 1
 
-  jq --exit-status '(.Credentials.Expiration | fromdate) > now' < "$cache" > /dev/null
+  jq --exit-status '(.Credentials.Expiration | sub("\\+00:00$"; "Z") | fromdate) > now' < "$cache" > /dev/null
 }
 
 credentials_json_or_cache() {
