@@ -80,6 +80,9 @@ You can set token_duration per profile in `~/.aws/config` as follows:
 token_duration=43200
 ```
 
+## Alternatives
+- https://github.com/99designs/aws-vault
+- https://github.com/k1LoW/awsdo
 
 ## License
 
