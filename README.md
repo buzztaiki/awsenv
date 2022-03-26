@@ -4,8 +4,8 @@ Set AWS credential environment variables and execute.
 
 ## Requirements
 
-- https://github.com/aws/aws-cli
-- https://github.com/stedolan/jq
+- [aws-cli v1](https://github.com/aws/aws-cli) or [aws-cli v2](https://github.com/aws/aws-cli/tree/v2)
+- [jq](https://github.com/stedolan/jq)
 
 
 ## Features
